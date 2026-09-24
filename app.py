@@ -75,4 +75,117 @@ tactic_explanations = {
     "social_proof": "claims others have already done this or been selected",
     "greed": "promises money or rewards that seem too good to be true",
 }
+scam_type_labels = {
+    "digital_arrest": "Digital Arrest Scam (fake police/government threat)",
+    "fake_job": "Fake Job Offer Scam",
+    "fake_scholarship": "Fake Scholarship Scam",
+    "kyc_upi": "Fake KYC/Bank/UPI Update Scam",
+    "lottery": "Fake Lottery/Prize Scam",
+    "courier": "Fake Courier/Parcel Scam",
+    "legitimate": "Not a scam",
+}
+
+def check_message(message):
+    cleaned = clean_text(message)
+    vec = vectorizer.transform([cleaned])
+
+    tactic_pred = tactic_model.predict(vec)[0]
+    detected = [
+        tactic_columns[i]
+        for i in range(len(tactic_columns))
+        if tactic_pred[i] == 1
+    ]
+
+    type_pred = type_model.predict(vec)[0]
+    type_label = scam_type_labels.get(type_pred, type_pred)
+
+    if not detected and type_pred == "legitimate":
+        return "This message looks legitimate. Still stay cautious with unknown senders."
+
+    if not detected:
+        return "No manipulation tactics detected. Stay cautious with unknown senders."
+
+    result = f"LIKELY SCAM — Predicted type: {type_label}\n\n"
+    result += "Manipulation tactics detected:\n"
+
+    for tactic in detected:
+        result += f"• {tactic.upper()}: {tactic_explanations[tactic]}\n"
+
+    result += "\nWhy this matters: scammers combine these tactics to pressure you into acting quickly.\n"
+    result += "\nSafety tip: Do not click links, share OTPs/PINs, or transfer money. Verify independently through official channels."
+
+    return result
+
+
+custom_css = """
+#title {
+    text-align: center;
+    font-size: 32px;
+    font-weight: bold;
+    color: #1E2761;
+}
+
+#subtitle {
+    text-align: center;
+    font-size: 16px;
+    color: #5B6472;
+    margin-bottom: 20px;
+}
+"""
+
+with gr.Blocks(css=custom_css) as demo:
+
+    gr.Markdown(
+        "# 🛡️ TacticGuard",
+        elem_id="title"
+    )
+
+    gr.Markdown(
+        "AI-powered scam message analyzer — detects manipulation tactics, not just fake/real",
+        elem_id="subtitle"
+    )
+
+    with gr.Row():
+
+        with gr.Column():
+
+            msg_input = gr.Textbox(
+                label="Paste a suspicious message here",
+                lines=5,
+                placeholder="e.g. Your Aadhaar is linked to a case, pay within 2 hours..."
+            )
+
+            submit_btn = gr.Button(
+                "🔍 Analyze Message",
+                variant="primary"
+            )
+
+        with gr.Column():
+
+            output_box = gr.Textbox(
+                label="Analysis Result",
+                lines=12
+            )
+
+    gr.Examples(
+        examples=[
+            "Your Aadhaar number is linked to a parcel containing illegal drugs. Video call our officer within 30 minutes.",
+            "Congratulations! You have been selected for a Work From Home job at Amazon. Pay Rs 500 registration fee.",
+            "Hi, are we still meeting for lunch today at 1pm?",
+        ],
+        inputs=msg_input,
+        label="Try an example"
+    )
+
+    submit_btn.click(
+        fn=check_message,
+        inputs=msg_input,
+        outputs=output_box
+    )
+
+
+demo.launch(
+    server_name="0.0.0.0",
+    server_port=int(os.environ.get("PORT", 10000))
+)
     
