@@ -74,4 +74,5 @@ tactic_explanations = {
     "reciprocity": "offers something (job, prize, refund) in exchange for a fee or info",
     "social_proof": "claims others have already done this or been selected",
     "greed": "promises money or rewards that seem too good to be true",
+}
     
