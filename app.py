@@ -21,7 +21,7 @@ print("Data loaded:", df.shape)
 
 
 # =========================
-# CLEAN TEXT
+# TEXT CLEANING
 # =========================
 
 def clean_text(text):
@@ -36,7 +36,7 @@ df["clean_text"] = df["message_text"].apply(clean_text)
 
 
 # =========================
-# MODEL 1: TACTIC DETECTION
+# TACTIC MODEL
 # =========================
 
 tactic_columns = [
@@ -75,7 +75,7 @@ print("Tactic model trained")
 
 
 # =========================
-# MODEL 2: SCAM TYPE
+# SCAM TYPE MODEL
 # =========================
 
 y_type = df["scam_type"]
@@ -92,40 +92,44 @@ type_model.fit(
 
 
 # =========================
-# LABELS
+# EXPLANATIONS
 # =========================
 
 tactic_explanations = {
-    "authority": "Pretends to be police, government, or a trusted organization",
-    "urgency": "Pressures you to act immediately",
-    "fear": "Uses threats such as arrest, blocking, or legal action",
-    "reciprocity": "Offers a benefit in exchange for money or information",
-    "social_proof": "Claims that other people have already done it",
-    "greed": "Promises money or rewards that seem too good to be true"
+    "authority": "Pretends to be police, government, bank, or another trusted organization.",
+    "urgency": "Pressures you to act immediately or within a short deadline.",
+    "fear": "Uses threats such as arrest, account blocking, or legal action.",
+    "reciprocity": "Offers a benefit in exchange for money or personal information.",
+    "social_proof": "Claims that other people have already participated or been selected.",
+    "greed": "Promises money, prizes, jobs, or rewards that seem too good to be true."
 }
+
 
 scam_type_labels = {
     "digital_arrest": "Digital Arrest Scam",
     "fake_job": "Fake Job Offer Scam",
     "fake_scholarship": "Fake Scholarship Scam",
     "kyc_upi": "Fake KYC / Bank / UPI Scam",
-    "lottery": "Fake Lottery / Prize Scam",
+    "lottery": "Lottery / Prize Scam",
     "courier": "Fake Courier / Parcel Scam",
     "legitimate": "No Scam Detected"
 }
 
 
 # =========================
-# ANALYSIS FUNCTION
+# ANALYSIS
 # =========================
 
 def check_message(message):
 
     if not message or not message.strip():
-        return "⚠️ Please enter a message to analyze."
+        return (
+            "⚠️  PLEASE ENTER A MESSAGE\n\n"
+            "Paste a suspicious SMS, WhatsApp message, "
+            "email, job offer, or bank alert to analyze it."
+        )
 
     cleaned = clean_text(message)
-
     vec = vectorizer.transform([cleaned])
 
     tactic_pred = tactic_model.predict(vec)[0]
@@ -143,156 +147,222 @@ def check_message(message):
         type_pred
     )
 
+    # LEGITIMATE
     if not detected and type_pred == "legitimate":
-
         return (
-            "🟢 LOW RISK / LIKELY LEGITIMATE\n\n"
+            "🟢  LOW RISK / LIKELY LEGITIMATE\n"
+            "━━━━━━━━━━━━━━━━━━━━━━\n\n"
+            f"📌 Category: {type_label}\n\n"
             "No major manipulation tactics were detected.\n\n"
-            "Still stay cautious with unknown senders."
+            "💡 Still stay cautious with unknown senders."
         )
 
+    # NO TACTICS
     if not detected:
-
         return (
-            "🟡 NO CLEAR TACTICS DETECTED\n\n"
-            f"Predicted category: {type_label}\n\n"
-            "Stay cautious with unknown messages."
+            "🟡  NO CLEAR MANIPULATION TACTICS\n"
+            "━━━━━━━━━━━━━━━━━━━━━━\n\n"
+            f"📌 Predicted Category: {type_label}\n\n"
+            "The model did not detect the listed manipulation tactics.\n\n"
+            "💡 Stay cautious and verify suspicious claims independently."
         )
 
+    # SCAM
     result = (
-        "🔴 LIKELY SCAM\n\n"
-        f"📌 Predicted Type:\n{type_label}\n\n"
-        "🎯 Manipulation Tactics Detected:\n"
+        "🔴  LIKELY SCAM\n"
+        "━━━━━━━━━━━━━━━━━━━━━━\n\n"
+        f"📌 Predicted Scam Type\n"
+        f"{type_label}\n\n"
+        "🎯 Manipulation Tactics Detected\n"
+        "━━━━━━━━━━━━━━━━━━━━━━\n"
     )
 
     for tactic in detected:
         result += (
-            f"\n• {tactic.upper()}\n"
-            f"  {tactic_explanations[tactic]}\n"
+            f"\n🔸 {tactic.upper()}\n"
+            f"   {tactic_explanations[tactic]}\n"
         )
 
     result += (
-        "\n\n⚠️ Why this matters:\n"
+        "\n\n⚠️ Why this matters\n"
+        "━━━━━━━━━━━━━━━━━━━━━━\n"
         "Scammers often combine fear, urgency, authority, "
-        "or rewards to make people act without verifying.\n\n"
-        "🛡️ Safety Tip:\n"
-        "Do not click suspicious links, share OTPs/PINs, "
-        "or transfer money. Verify independently through "
-        "official channels."
+        "or rewards to pressure people into acting quickly "
+        "without verification.\n\n"
+        "🛡️ Safety Checklist\n"
+        "━━━━━━━━━━━━━━━━━━━━━━\n"
+        "• Do not click suspicious links\n"
+        "• Never share OTPs or PINs\n"
+        "• Do not transfer money under pressure\n"
+        "• Verify through official channels"
     )
 
     return result
 
 
 # =========================
-# PROFESSIONAL UI
+# PROFESSIONAL DESIGN
 # =========================
 
 css = """
 
 body {
-    background: #f4f7fb;
+    background: linear-gradient(135deg, #eef4ff 0%, #f8fbff 50%, #eef8f5 100%);
 }
 
 .gradio-container {
-    max-width: 1100px !important;
+    max-width: 1150px !important;
     margin: auto !important;
+    padding: 20px !important;
 }
 
 #hero {
     text-align: center;
-    padding: 30px 10px 20px;
+    padding: 35px 15px 25px;
 }
 
-#title {
-    font-size: 42px;
-    font-weight: 800;
+#logo {
+    font-size: 58px;
     margin-bottom: 5px;
 }
 
-#subtitle {
-    font-size: 18px;
-    color: #5f6b7a;
+#title {
+    font-size: 46px;
+    font-weight: 800;
+    letter-spacing: -1px;
+    margin: 0;
 }
 
-.card {
-    border-radius: 18px !important;
-    padding: 20px !important;
+#tagline {
+    font-size: 19px;
+    margin-top: 10px;
+    color: #5b6575;
+}
+
+#description {
+    font-size: 15px;
+    color: #6b7280;
+    max-width: 700px;
+    margin: 12px auto;
+}
+
+.panel {
+    background: white;
+    border-radius: 20px;
+    padding: 22px;
+    box-shadow: 0 8px 30px rgba(20, 40, 80, 0.08);
+    border: 1px solid #e6ebf2;
 }
 
 #analyze {
-    height: 55px;
+    height: 58px;
+    border-radius: 12px;
     font-size: 17px;
     font-weight: 700;
 }
 
 #result textarea {
     font-size: 15px !important;
+    line-height: 1.55 !important;
+}
+
+.section-title {
+    text-align: center;
+    font-size: 25px;
+    font-weight: 700;
+    margin: 35px 0 15px;
+}
+
+.info-card {
+    background: white;
+    border-radius: 16px;
+    padding: 18px;
+    border: 1px solid #e6ebf2;
+    text-align: center;
+    box-shadow: 0 5px 20px rgba(20, 40, 80, 0.05);
 }
 
 .footer {
     text-align: center;
     color: #6b7280;
-    margin-top: 25px;
-    padding: 15px;
+    margin-top: 35px;
+    padding: 20px;
+    font-size: 13px;
 }
 
 """
 
 
+# =========================
+# APP
+# =========================
+
 with gr.Blocks(css=css) as demo:
 
     # HERO
-    gr.Markdown(
+    gr.HTML(
         """
         <div id="hero">
-            <div id="title">🛡️ TacticGuard</div>
-            <div id="subtitle">
-                AI-powered scam message analyzer
+
+            <div id="logo">🛡️</div>
+
+            <div id="title">
+                TacticGuard
             </div>
-            <p>
-                Detect manipulation tactics behind suspicious messages —
-                not just fake or real.
-            </p>
+
+            <div id="tagline">
+                AI-Powered Scam Message Analyzer
+            </div>
+
+            <div id="description">
+                Detect psychological manipulation tactics hidden
+                inside suspicious messages — not just fake or real.
+            </div>
+
         </div>
         """
     )
 
-    # MAIN AREA
+
+    # MAIN ANALYZER
     with gr.Row():
 
-        with gr.Column(elem_classes="card"):
+        with gr.Column(elem_classes="panel"):
 
-            gr.Markdown("### 🔍 Analyze a Message")
+            gr.Markdown("### 🔍 Analyze a Suspicious Message")
 
             msg_input = gr.Textbox(
-                label="Suspicious Message",
-                lines=8,
+                label="Message",
+                lines=9,
                 placeholder=(
-                    "Paste a suspicious SMS, WhatsApp message, "
-                    "job offer, bank alert, or email here..."
+                    "Paste an SMS, WhatsApp message, "
+                    "job offer, bank alert, email, or suspicious message here..."
                 )
             )
 
             submit_btn = gr.Button(
-                "🔎 Analyze Message",
+                "🔎 ANALYZE MESSAGE",
                 variant="primary",
                 elem_id="analyze"
             )
 
-        with gr.Column(elem_classes="card"):
 
-            gr.Markdown("### 📊 Analysis Result")
+        with gr.Column(elem_classes="panel"):
+
+            gr.Markdown("### 📊 TacticGuard Analysis")
 
             output_box = gr.Textbox(
-                label="TacticGuard Report",
-                lines=16,
+                label="Analysis Report",
+                lines=17,
                 interactive=False,
                 elem_id="result"
             )
 
-    # EXAMPLES
-    gr.Markdown("### 🧪 Try Sample Messages")
+
+    # SAMPLE MESSAGES
+    gr.HTML(
+        '<div class="section-title">🧪 Try Sample Messages</div>'
+    )
 
     gr.Examples(
         examples=[
@@ -307,43 +377,93 @@ with gr.Blocks(css=css) as demo:
             ]
         ],
         inputs=msg_input,
-        label="Click a sample to test"
+        label="Select a sample message"
     )
+
 
     # HOW IT WORKS
-    gr.Markdown(
-        """
-        ---
-
-        ### ⚙️ How TacticGuard Works
-
-        **1️⃣ Message Input** → Paste a suspicious message
-
-        **2️⃣ AI Analysis** → Machine-learning models analyze the text
-
-        **3️⃣ Tactic Detection** → Detects psychological manipulation tactics
-
-        **4️⃣ Scam Classification** → Predicts the possible scam category
-
-        **5️⃣ Safety Guidance** → Provides practical precautions
-
-        ---
-
-        ### 🛡️ Stay Safe Online
-
-        Never share **OTP, PIN, passwords or banking details** with
-        unknown people. Always verify suspicious claims through
-        official channels.
-        """
+    gr.HTML(
+        '<div class="section-title">⚙️ How TacticGuard Works</div>'
     )
 
-    gr.Markdown(
+    with gr.Row():
+
+        gr.HTML(
+            """
+            <div class="info-card">
+                <h3>1️⃣ Input</h3>
+                <p>Paste a suspicious message.</p>
+            </div>
+            """
+        )
+
+        gr.HTML(
+            """
+            <div class="info-card">
+                <h3>2️⃣ AI Analysis</h3>
+                <p>Machine-learning models analyze the text.</p>
+            </div>
+            """
+        )
+
+        gr.HTML(
+            """
+            <div class="info-card">
+                <h3>3️⃣ Detect</h3>
+                <p>Identify manipulation tactics and scam type.</p>
+            </div>
+            """
+        )
+
+        gr.HTML(
+            """
+            <div class="info-card">
+                <h3>4️⃣ Protect</h3>
+                <p>Get practical safety guidance.</p>
+            </div>
+            """
+        )
+
+
+    # SAFETY SECTION
+    gr.HTML(
         """
-        <div class="footer">
-            🛡️ TacticGuard • AI-based Scam Awareness Project
+        <div class="section-title">
+            🛡️ Stay Safe Online
+        </div>
+
+        <div class="info-card">
+
+            <h3>Remember the basics</h3>
+
+            <p>
+            Never share <b>OTP • PIN • Password • Banking Details</b>
+            with unknown people.
+            </p>
+
+            <p>
+            If a message creates extreme urgency or fear,
+            stop and verify it through an official source.
+            </p>
+
         </div>
         """
     )
+
+
+    # FOOTER
+    gr.HTML(
+        """
+        <div class="footer">
+            🛡️ <b>TacticGuard</b>
+            &nbsp;•&nbsp;
+            AI-Based Scam Awareness Project
+            <br>
+            Built for cybersecurity awareness and education.
+        </div>
+        """
+    )
+
 
     submit_btn.click(
         fn=check_message,
@@ -353,7 +473,7 @@ with gr.Blocks(css=css) as demo:
 
 
 # =========================
-# START SERVER
+# RENDER SERVER
 # =========================
 
 demo.launch(
