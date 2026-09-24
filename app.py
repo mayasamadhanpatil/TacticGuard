@@ -69,4 +69,9 @@ type_model.fit(vectorizer.transform(X), y_type)
 # Explanations
 tactic_explanations = {
     "authority": "pretends to be police, government, or a trusted organization",
-    "urgency": "pressures you to act
+    "urgency": "pressures you to act immediately, with a tight deadline",
+    "fear": "threatens you with arrest, blocking, or legal action",
+    "reciprocity": "offers something (job, prize, refund) in exchange for a fee or info",
+    "social_proof": "claims others have already done this or been selected",
+    "greed": "promises money or rewards that seem too good to be true",
+    
